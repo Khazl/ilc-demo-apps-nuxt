@@ -1,0 +1,54 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Docker ilc auth
+      run: echo "${{ secrets.DOCKER_HUB_TOKEN_NC }}" | docker login --username namecheaprnd --password-stdin
+
+    - name: Build the Docker image
+      run: |
+        docker build --tag apps:tmp --build-arg VCS_REF=${GITHUB_SHA:0:7} .
+
+    - name: Calc tags
+      id: tags
+      run: |
+        BRANCH=$(echo ${GITHUB_REF} | cut -d '/' -f 3-99)
+        LATEST=$([ "$BRANCH" == "master" ] && echo "latest,${GITHUB_SHA:0:7}," || echo "")
+        DOCKER_TAGS="$LATEST${BRANCH//\//_}"
+        echo "Tags that will be used: $DOCKER_TAGS"
+        echo ::set-output name=docker_tags::$DOCKER_TAGS
+
+    - name: Push image
+      run: |
+        TAGS="${{ steps.tags.outputs.docker_tags }}"
+
+        for i in ${TAGS//,/ }
+        do
+            docker tag apps:tmp namecheap/ilc-demo-apps:$i
+            docker push namecheap/ilc-demo-apps:$i
+        done
+
+    - name: Deploy demo site
+      if: github.ref == 'refs/heads/master'
+      uses: appleboy/ssh-action@v0.0.7
+      with:
+        host: ${{ secrets.DEMO_INSTANCE_HOST }}
+        username: ec2-user
+        key: ${{ secrets.DEMO_INSTANCE_SSH_KEY }}
+        port: 22
+        script_stop: true
+        script: |
+          curl -L https://raw.githubusercontent.com/namecheap/ilc/master/docker-compose.yml -o /home/ec2-user/docker-compose.yml
+          docker image prune --all -f
+          docker-compose pull
+          docker-compose up -d
+          sleep 20
+          docker-compose run -e PUBLIC_HOST=demo.microfrontends.online registry npm run seed
