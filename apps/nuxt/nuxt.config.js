@@ -1,5 +1,5 @@
-import * as deLang from './src/lang/de.json'
-import * as enLang from './src/lang/en.json'
+// import * as deLang from './src/lang/de.json'
+// import * as enLang from './src/lang/en.json'
 
 export default {
     // universal = SSR
@@ -73,8 +73,9 @@ export default {
             ]
         }],
         '@nuxtjs/style-resources',
-        'nuxt-i18n'
+        //'nuxt-i18n'
     ],
+    /*
     i18n: {
         locales: ['de', 'en'],
         defaultLocale: 'de',
@@ -86,6 +87,7 @@ export default {
             }
         }
     },
+     */
     router: {
         base: '/nuxt'
     },

@@ -1,7 +1,7 @@
 <template>
     <!-- eslint-disable vue-i18n/no-raw-text -->
     <div>
-        <h1>{{ $t('homepage.title') }}</h1>
+        <h1>Hello from Nuxt</h1>
     </div>
 </template>
 
